@@ -1,1 +1,15 @@
-<app-force-directed-graph></app-force-directed-graph>
+<div class="dashboard">
+    <header class="dashboard-header">
+        <p-button icon="pi-ellipsis-v" (click)="sidebarVisible = true"></p-button>
+        <h1>D3 Graph Examples</h1>
+    </header>
+
+    <p-sidebar [(visible)]="sidebarVisible">
+        <h2>Navigation</h2>
+        <p-menu [model]="menuItems"></p-menu>
+    </p-sidebar>
+
+    <main class="dashboard-content">
+        <app-force-directed-graph *ngIf="showGraph"></app-force-directed-graph>
+    </main>
+</div>

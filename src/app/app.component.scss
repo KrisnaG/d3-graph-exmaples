@@ -1,0 +1,99 @@
+.dashboard {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--surface-ground);
+}
+
+.dashboard-header {
+    padding: 1rem 2rem;
+    background-color: var(--surface-card);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+
+    h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: var(--surface-900);
+        font-weight: 600;
+    }
+
+    :host ::ng-deep {
+        .p-button {
+            width: 2.5rem;
+            height: 2.5rem;
+            
+            &:focus {
+                box-shadow: none;
+            }
+        }
+    }
+}
+
+.dashboard-content {
+    flex: 1;
+    padding: 2rem;
+    overflow: auto;
+    background-color: var(--surface-ground);
+
+    // Add a nice container for the graph
+    app-force-directed-graph {
+        display: block;
+        background: var(--surface-card);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+    }
+}
+
+:host ::ng-deep {
+    .p-sidebar {
+        .p-sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--surface-200);
+        }
+
+        .p-sidebar-content {
+            padding: 0;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--surface-900);
+            font-weight: 600;
+        }
+
+        .p-menu {
+            border: none;
+            width: 100%;
+            padding: 0.5rem;
+
+            .p-menuitem {
+                &:hover {
+                    background-color: var(--surface-hover);
+                    border-radius: 8px;
+                }
+            }
+
+            .p-menuitem-link {
+                padding: 0.75rem 1rem;
+                
+                &:hover {
+                    background-color: transparent;
+                }
+
+                .p-menuitem-icon {
+                    color: var(--primary-color);
+                }
+
+                .p-menuitem-text {
+                    color: var(--surface-700);
+                }
+            }
+        }
+    }
+}
