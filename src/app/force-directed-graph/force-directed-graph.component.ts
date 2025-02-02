@@ -1,5 +1,10 @@
-import { Component, ElementRef, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, HostListener } from '@angular/core';
 import * as d3 from 'd3';
+import { LinkManager } from '../utils/link-manager';
+import { LabelManager } from '../utils/label-manager';
+import { ShapeFactory } from '../utils/shape-factory';
+import { GraphDataService, Node, Link } from '../service/graph-data.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-force-directed-graph',
@@ -8,56 +13,85 @@ import * as d3 from 'd3';
   templateUrl: './force-directed-graph.component.html',
   styleUrl: './force-directed-graph.component.scss'
 })
-export class ForceDirectedGraphComponent implements OnInit {
+export class ForceDirectedGraphComponent implements OnInit, OnDestroy {
   private svg: any;
   private simulation: any;
+  private linkManager!: LinkManager;
+  private labelManager: LabelManager = new LabelManager();
+  private selectedNode: any = null;
+  private subscriptions: Subscription = new Subscription();
+  private resizeTimeout: any;
   
-  constructor(private elementRef: ElementRef) {}
+  constructor(
+    private elementRef: ElementRef,
+    private graphDataService: GraphDataService
+  ) {}
 
-  ngOnInit() {
-    this.createGraph();
+  @HostListener('window:resize')
+  onResize() {
+    // Debounce resize events
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
+    }
+    this.resizeTimeout = setTimeout(() => {
+      this.updateGraphDimensions();
+    }, 250); // Wait for 250ms after last resize event
   }
 
-  private createGraph() {
-    // Sample data with more nodes and links, including duplicate connections
-    const nodes = [
-      { id: 1, name: 'Node 1 with a very long description', shape: 'circle', showText: true },
-      { id: 2, name: 'Node 2 which also has quite a detailed explanation', shape: 'rectangle', showText: true },
-      { id: 3, name: 'Node 3 with lots of information', shape: 'circle', showText: true },
-      { id: 4, name: 'Node 4 and its description', shape: 'rectangle', showText: true },
-      { id: 5, name: 'Node 5 containing important data', shape: 'circle', showText: true },
-      { id: 6, name: 'Node 6 with additional context', shape: 'rectangle', showText: true },
-      { id: 7, name: 'Node 7 explaining the process', shape: 'circle', showText: true },
-      { id: 8, name: 'Node 8 with technical details', shape: 'rectangle', showText: true },
-      { id: 9, name: 'Node 9 showing results', shape: 'circle', showText: true },
-      { id: 10, name: 'Node 10 with conclusions', shape: 'rectangle', showText: true }
-    ];
+  private updateGraphDimensions() {
+    if (!this.svg || !this.simulation) return;
 
-    const links = [
-      { source: 1, target: 2 },
-      { source: 2, target: 1 }, // Duplicate link
-      { source: 2, target: 3 },
-      { source: 3, target: 4 },
-      { source: 4, target: 1 },
-      { source: 5, target: 1 },
-      { source: 5, target: 6 },
-      { source: 6, target: 7 },
-      { source: 7, target: 8 },
-      { source: 8, target: 9 },
-      { source: 9, target: 10 },
-      { source: 10, target: 5 },
-      { source: 2, target: 7 },
-      { source: 3, target: 9 },
-      { source: 4, target: 6 },
-      { source: 1, target: 8 },
-      { source: 5, target: 1 }, // Duplicate link
-    ];
+    // Get new dimensions
+    const width = this.elementRef.nativeElement.offsetWidth;
+    const height = this.elementRef.nativeElement.offsetHeight;
 
-    // Create SVG container with zoom support
+    // Update SVG dimensions
+    this.svg
+      .style('width', '100%')
+      .style('height', '100%');
+
+    // Update force simulation center
+    this.simulation
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .alpha(0.3) // Set the alpha to restart the simulation
+      .restart();
+  }
+
+  ngOnInit() {
+    this.subscriptions.add(
+      this.graphDataService.getNodes().subscribe(nodes => {
+        this.subscriptions.add(
+          this.graphDataService.getLinks().subscribe(links => {
+            this.createGraph(nodes, links);
+          })
+        );
+      })
+    );
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.unsubscribe();
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
+    }
+  }
+
+  private createGraph(nodes: Node[], links: Link[]) {
+    // Clear existing graph if any
+    if (this.svg) {
+      d3.select(this.elementRef.nativeElement).selectAll('*').remove();
+    }
+
+    // Update SVG container to fill parent element
     this.svg = d3.select(this.elementRef.nativeElement)
       .append('svg')
-      .attr('width', 600)
-      .attr('height', 400);
+      .style('width', '100%')
+      .style('height', '100%')
+      .attr('preserveAspectRatio', 'xMidYMid meet');
+
+    // Get the actual dimensions of the container
+    const width = this.elementRef.nativeElement.offsetWidth;
+    const height = this.elementRef.nativeElement.offsetHeight;
 
     // Add zoom behavior
     const zoom = d3.zoom()
@@ -72,35 +106,24 @@ export class ForceDirectedGraphComponent implements OnInit {
     // Create a container group for all elements
     const container = this.svg.append('g');
 
-    // Create force simulation
+    // Update the force simulation with weighted link distances
     this.simulation = d3.forceSimulation(nodes as any)
-      .force('link', d3.forceLink(links).id((d: any) => d.id))
+      .force('link', d3.forceLink<any, any>(links)
+        .id((d: any) => d.id)
+        .distance((d: any) => d.weight * 100)
+      )
       .force('charge', d3.forceManyBody().strength(-1000))
-      .force('center', d3.forceCenter(300, 200));
+      .force('center', d3.forceCenter(width / 2, height / 2));
 
-    // Group links by source-target pairs AFTER simulation is created
-    const linkGroups = new Map();
-    links.forEach(link => {
-      // Access the source and target objects that the simulation created
-      const sourceId = typeof link.source === 'object' ? (link.source as {id: number}).id : link.source;
-      const targetId = typeof link.target === 'object' ? (link.target as {id: number}).id : link.target;
-      
-      // Create a consistent key regardless of direction
-      const key = [Math.min(sourceId, targetId), Math.max(sourceId, targetId)].join('-');
-      
-      if (!linkGroups.has(key)) {
-        linkGroups.set(key, []);
-      }
-      linkGroups.get(key).push(link);
-    });
+    this.linkManager = new LinkManager(links);
 
-    // Draw links
+    // Update link styling to reflect weight
     const link = container
       .selectAll('path')
       .data(links)
       .join('path')
       .style('stroke', '#999')
-      .style('stroke-width', 1)
+      .style('stroke-width', (d: any) => 1 / Math.max(1, d.weight))
       .style('fill', 'none');
 
     // Create node groups
@@ -111,36 +134,21 @@ export class ForceDirectedGraphComponent implements OnInit {
       .call(d3.drag<any, any>()
         .on('start', this.dragStarted.bind(this))
         .on('drag', this.dragged.bind(this))
-        .on('end', this.dragEnded.bind(this)));
+        .on('end', this.dragEnded.bind(this)))
+      .on('click', (event: MouseEvent, d: any) => this.handleNodeClick(event, d));
 
     // Add shapes to nodes
     nodeGroup.each(function(this: d3.BaseType, d: any) {
       const element = d3.select(this);
-      if (d.shape === 'circle') {
-        element.append('circle')
-          .attr('r', 30)
-          .style('fill', '#69b3a2');
-        
-        element.append('clipPath')
-          .attr('id', (d: any) => `clip-${d.id}`)
-          .append('circle')
-          .attr('r', 28);
-      } else {
-        element.append('rect')
-          .attr('width', 60)
-          .attr('height', 60)
-          .attr('x', -30)
-          .attr('y', -30)
-          .style('fill', '#69b3a2');
-        
-        element.append('clipPath')
-          .attr('id', (d: any) => `clip-${d.id}`)
-          .append('rect')
-          .attr('width', 56)
-          .attr('height', 56)
-          .attr('x', -28)
-          .attr('y', -28);
-      }
+      const nodeShape = ShapeFactory.createShape(d.shape);
+      
+      // Draw the main shape
+      nodeShape.draw(element, 30);
+      
+      // Create clip path
+      element.append('clipPath')
+        .attr('id', (d: any) => `clip-${d.id}`)
+        .call(selection => nodeShape.createClipPath(selection, 30));
     });
 
     // Add text labels
@@ -159,88 +167,13 @@ export class ForceDirectedGraphComponent implements OnInit {
 
     // Update positions on each tick
     this.simulation.on('tick', () => {
-      link.attr('d', (d: any) => {
-        // Create key from the actual source and target objects
-        const key = [
-          Math.min(d.source.id, d.target.id),
-          Math.max(d.source.id, d.target.id)
-        ].join('-');
-        
-        const links = linkGroups.get(key);
-        
-        if (links && links.length > 1) {
-          // Calculate curve for multiple links
-          const index = links.indexOf(d);
-          const total = links.length;
-          const curveOffset = 30 * (index - (total - 1) / 2);
-          
-          const dx = d.target.x - d.source.x;
-          const dy = d.target.y - d.source.y;
-          const midX = (d.source.x + d.target.x) / 2;
-          const midY = (d.source.y + d.target.y) / 2;
-          
-          const length = Math.sqrt(dx * dx + dy * dy);
-          const normalX = -dy / length;
-          const normalY = dx / length;
-          
-          const cpX = midX + normalX * curveOffset;
-          const cpY = midY + normalY * curveOffset;
-          
-          return `M${d.source.x},${d.source.y} Q${cpX},${cpY} ${d.target.x},${d.target.y}`;
-        } else {
-          // Straight line for single links
-          return `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`;
-        }
-      });
-
+      link.attr('d', (d: any) => this.linkManager.getPath(d));
       nodeGroup.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
     });
   }
 
   private updateLabels(scale: number) {
-    // Calculate visible width based on node size and zoom
-    const nodeRadius = 28; // Using the clip path radius
-    const visibleWidth = nodeRadius * 2; // Full diameter
-    const charsPerPixel = 0.3; // Adjusted characters per pixel
-    const maxChars = Math.floor(visibleWidth * charsPerPixel * scale);
-    
-    this.svg.selectAll('text')
-      .each(function(this: d3.BaseType, d: any) {
-        const text = d.name;
-        const truncatedText = text.length > maxChars ? text.slice(0, maxChars) + '...' : text;
-        
-        // Split text into multiple lines if needed
-        const element = d3.select(this);
-        element.selectAll('*').remove(); // Clear existing content
-        
-        const words = truncatedText.split(' ');
-        let lines = [''];
-        let lineNumber = 0;
-        
-        words.forEach((word: string) => {
-          const testLine = lines[lineNumber] + (lines[lineNumber] ? ' ' : '') + word;
-          if (testLine.length * 6 > visibleWidth * scale) { // 6 pixels per character approximation
-            lineNumber++;
-            lines[lineNumber] = word;
-          } else {
-            lines[lineNumber] = testLine;
-          }
-        });
-
-        // Limit to 3 lines maximum
-        lines = lines.slice(0, 3);
-        if (lines.length === 3 && words.length > lines.join(' ').split(' ').length) {
-          lines[2] = lines[2].replace(/\s*\S*$/, '...');
-        }
-        
-        // Add lines as tspans
-        lines.forEach((line, i) => {
-          element.append('tspan')
-            .attr('x', 0)
-            .attr('dy', i === 0 ? `-${(lines.length - 1) * 0.6}em` : '1.2em')
-            .text(line);
-        });
-      });
+    this.labelManager.updateLabels(this.svg.selectAll('text'), scale);
   }
 
   private dragStarted(this: ForceDirectedGraphComponent, event: any, d: any) {
@@ -258,5 +191,26 @@ export class ForceDirectedGraphComponent implements OnInit {
     if (!event.active) this.simulation.alphaTarget(0);
     d.fx = null;
     d.fy = null;
+  }
+
+  private handleNodeClick(event: MouseEvent, d: any) {
+    const element = d3.select(event.currentTarget as Element);
+    const nodeShape = ShapeFactory.createShape(d.shape);
+
+    if (this.selectedNode === d) {
+      nodeShape.unhighlight(element);
+      this.selectedNode = null;
+    } else {
+      // Unhighlight previous selection if exists
+      if (this.selectedNode) {
+        const prevElement = this.svg.select(`g[data-id="${this.selectedNode.id}"]`);
+        const prevShape = ShapeFactory.createShape(this.selectedNode.shape);
+        prevShape.unhighlight(prevElement);
+      }
+      
+      // Highlight new selection
+      nodeShape.highlight(element);
+      this.selectedNode = d;
+    }
   }
 }
