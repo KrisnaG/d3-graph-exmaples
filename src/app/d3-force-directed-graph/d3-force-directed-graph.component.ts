@@ -3,17 +3,17 @@ import * as d3 from 'd3';
 import { LinkManager } from '../utils/link-manager';
 import { LabelManager } from '../utils/label-manager';
 import { ShapeFactory } from '../utils/shape-factory';
-import { GraphDataService, Node, Link } from '../service/graph-data.service';
+import { GraphDataService, Node, Link } from '../services/graph-data.service';
 import { Subscription } from 'rxjs';
 
 @Component({
-  selector: 'app-force-directed-graph',
+  selector: 'app-d3-force-directed-graph',
   standalone: true,
   imports: [],
-  templateUrl: './force-directed-graph.component.html',
-  styleUrl: './force-directed-graph.component.scss'
+  templateUrl: './d3-force-directed-graph.component.html',
+  styleUrl: './d3-force-directed-graph.component.scss'
 })
-export class ForceDirectedGraphComponent implements OnInit, OnDestroy {
+export class D3ForceDirectedGraphComponent implements OnInit, OnDestroy {
   private svg: any;
   private simulation: any;
   private linkManager!: LinkManager;
@@ -176,18 +176,18 @@ export class ForceDirectedGraphComponent implements OnInit, OnDestroy {
     this.labelManager.updateLabels(this.svg.selectAll('text'), scale);
   }
 
-  private dragStarted(this: ForceDirectedGraphComponent, event: any, d: any) {
+  private dragStarted(this: D3ForceDirectedGraphComponent, event: any, d: any) {
     if (!event.active) this.simulation.alphaTarget(0.3).restart();
     d.fx = d.x;
     d.fy = d.y;
   }
 
-  private dragged(this: ForceDirectedGraphComponent, event: any, d: any) {
+  private dragged(this: D3ForceDirectedGraphComponent, event: any, d: any) {
     d.fx = event.x;
     d.fy = event.y;
   }
 
-  private dragEnded(this: ForceDirectedGraphComponent, event: any, d: any) {
+  private dragEnded(this: D3ForceDirectedGraphComponent, event: any, d: any) {
     if (!event.active) this.simulation.alphaTarget(0);
     d.fx = null;
     d.fy = null;

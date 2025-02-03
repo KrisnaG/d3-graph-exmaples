@@ -1,4 +1,4 @@
-import { Link } from '../service/graph-data.service';
+import { Link } from '../services/graph-data.service';
 
 import { SimulationLinkDatum, SimulationNodeDatum } from 'd3';
 

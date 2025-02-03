@@ -47,7 +47,7 @@ export class GraphDataService {
     { source: 3, target: 9, weight: 5 },
     { source: 4, target: 6, weight: 0.5 },
     { source: 1, target: 8, weight: 1 },
-    { source: 5, target: 1, weight: 1 }
+    { source: 2, target: 1, weight: 1 }, 
   ];
 
   private nodesSubject = new BehaviorSubject<Node[]>(this.nodes);

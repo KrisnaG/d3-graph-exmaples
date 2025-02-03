@@ -1,15 +1,15 @@
 <div class="dashboard">
     <header class="dashboard-header">
-        <p-button icon="pi-ellipsis-v" (click)="sidebarVisible = true"></p-button>
-        <h1>D3 Graph Examples</h1>
+        <p-button icon="pi pi-bars" (click)="sidebarVisible = true"></p-button>
+        <h1>Graph Examples</h1>
     </header>
 
     <p-sidebar [(visible)]="sidebarVisible">
-        <h2>Navigation</h2>
         <p-menu [model]="menuItems"></p-menu>
     </p-sidebar>
 
     <main class="dashboard-content">
-        <app-force-directed-graph *ngIf="showGraph"></app-force-directed-graph>
+        <app-d3-force-directed-graph *ngIf="showGraph.d3"></app-d3-force-directed-graph>
+        <app-p5-force-directed-graph *ngIf="showGraph.p5"></app-p5-force-directed-graph>
     </main>
 </div>

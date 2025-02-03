@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ForceDirectedGraphComponent } from './force-directed-graph.component';
+import { D3ForceDirectedGraphComponent } from './d3-force-directed-graph.component';
 
 describe('ForceDirectedGraphComponent', () => {
-  let component: ForceDirectedGraphComponent;
-  let fixture: ComponentFixture<ForceDirectedGraphComponent>;
+  let component: D3ForceDirectedGraphComponent;
+  let fixture: ComponentFixture<D3ForceDirectedGraphComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ForceDirectedGraphComponent]
+      imports: [D3ForceDirectedGraphComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ForceDirectedGraphComponent);
+    fixture = TestBed.createComponent(D3ForceDirectedGraphComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
