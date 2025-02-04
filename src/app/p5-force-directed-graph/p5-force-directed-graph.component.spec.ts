@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { J5ForceDirectedGraphComponent } from './p5-force-directed-graph.component';
+import { P5ForceDirectedGraphComponent } from './p5-force-directed-graph.component';
 
-describe('J5ForceDirectedGraphComponent', () => {
-  let component: J5ForceDirectedGraphComponent;
-  let fixture: ComponentFixture<J5ForceDirectedGraphComponent>;
+describe('P5ForceDirectedGraphComponent', () => {
+  let component: P5ForceDirectedGraphComponent;
+  let fixture: ComponentFixture<P5ForceDirectedGraphComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [J5ForceDirectedGraphComponent]
+      imports: [P5ForceDirectedGraphComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(J5ForceDirectedGraphComponent);
+    fixture = TestBed.createComponent(P5ForceDirectedGraphComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -33,9 +33,12 @@
             ],
             "styles": [
               "src/styles.scss",
-              "node_modules/primeicons/primeicons.css"
+              "node_modules/primeicons/primeicons.css",
+              "node_modules/@knight-lab/timelinejs/dist/css/timeline.css"
             ],
-            "scripts": []
+            "scripts": [
+              "node_modules/@knight-lab/timelinejs/dist/js/timeline.js"
+            ]
           },
           "configurations": {
             "production": {

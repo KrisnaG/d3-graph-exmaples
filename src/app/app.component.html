@@ -9,7 +9,19 @@
     </p-sidebar>
 
     <main class="dashboard-content">
-        <app-d3-force-directed-graph *ngIf="showGraph.d3"></app-d3-force-directed-graph>
-        <app-p5-force-directed-graph *ngIf="showGraph.p5"></app-p5-force-directed-graph>
+        @switch (activeGraph) {
+            @case ('d3') {
+                <app-d3-force-directed-graph/>
+            }
+            @case ('p5') {
+                <app-p5-force-directed-graph/>
+            }
+            @case ('d3-timeline') {
+                <app-d3-timeline/>
+            }
+            @case ('timeline-js') {
+                <app-timeline-js/>
+            }
+        }
     </main>
 </div>

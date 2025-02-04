@@ -6,6 +6,10 @@ import { Button } from 'primeng/button';
 import { Menu } from 'primeng/menu';
 import { MenuItem } from 'primeng/api';
 import { CommonModule } from '@angular/common';
+import { D3TimelineComponent } from './d3-timeline/d3-timeline.component';
+import { TimelineJSComponent } from './timeline-js/timeline-js.component';
+
+type GraphType = 'd3' | 'p5' | 'd3-timeline' | 'timeline-js' | null;
 
 @Component({
   selector: 'app-root',
@@ -16,18 +20,16 @@ import { CommonModule } from '@angular/common';
     Sidebar,
     Button,
     Menu,
-    CommonModule
+    CommonModule,
+    D3TimelineComponent,
+    TimelineJSComponent
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
   sidebarVisible = false;
-  showGraph = {
-    "d3": false,
-    "p5": false,
-  };
-
+  activeGraph: GraphType = null;
 
   menuItems: MenuItem[] = [
     {
@@ -35,23 +37,30 @@ export class AppComponent {
       items: [
         {
           label: 'D3 Force Directed Graph',
-          icon: 'pi pi-chart-network',
-          command: () => {
-            this.showGraph.d3 = true;
-            this.showGraph.p5 = false;
-            this.sidebarVisible = false;
-          }
+          icon: 'pi pi-chart-scatter',
+          command: () => this.showGraph('d3')
         },
         {
           label: 'P5 Force Directed Graph',
-          icon: 'pi pi-chart-network',
-          command: () => {
-            this.showGraph.d3 = false;
-            this.showGraph.p5 = true;
-            this.sidebarVisible = false;
-          }
+          icon: 'pi pi-chart-scatter',
+          command: () => this.showGraph('p5')
+        },
+        {
+          label: 'D3 Timeline',
+          icon: 'pi pi-calendar',
+          command: () => this.showGraph('d3-timeline')
+        },
+        {
+          label: 'TimelineJS',
+          icon: 'pi pi-calendar',
+          command: () => this.showGraph('timeline-js')
         }
       ]
     }
   ];
+
+  showGraph(type: GraphType) {
+    this.activeGraph = type;
+    this.sidebarVisible = false;
+  }
 }
